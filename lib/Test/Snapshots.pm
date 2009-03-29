@@ -6,6 +6,9 @@ use 5.008005;
 
 our $VERSION = '0.01';
 
+# TODO deal with arguments
+# TODO deal with multiple test cases
+
 =head1 NAME
 
 Test::Snapshots - for testing stand alone scripts and executables
@@ -56,8 +59,9 @@ our @EXPORT = qw(test_all_snapshots);
 
 my $debug;
 my $combine;
-my $glob = '*.pl';
-my $skip = {};
+my $glob     = '*.pl';
+my $command  = $^X;
+my $skip     = {};
 
 sub debug {
 	$debug = shift;
@@ -72,7 +76,9 @@ sub set_glob {
 sub skip {
 	$skip = shift;
 }
-
+sub command {
+	$command = shift;
+}
 
 sub test_all_snapshots {
 	my ($dir) = @_;
@@ -98,7 +104,7 @@ sub test_all_snapshots {
 		$std{out} = "$tempdir/out";
 		$std{err} = "$tempdir/err";
 
-		my $cmd = "$^X $file";
+		my $cmd = "$command $file";
 		if ($combine) {
 			$cmd .= " >$std{out} 2>&1";
 		} else {
