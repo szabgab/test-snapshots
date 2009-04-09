@@ -40,6 +40,13 @@ Combines the stdout and stderr and compares them to the SCRIPT.out file
 
 Change the way we locate the scripts to be executed.
 
+
+ Test::Snapshots::set_accessories_dir('path/to/dir');
+
+In some cases you don't want the .out, .err etc files to be next to
+the script that are being tested. In such cases you can use the 
+above function to tell Test::Snapshots where those files can be found.
+
 =head1 WARNING
 
 This is alpha software. The API will most certainly change as 
@@ -62,6 +69,7 @@ my $combine;
 my $glob     = '*.pl';
 my $command  = $^X;
 my $skip     = {};
+my $accessories_dir;
 
 sub debug {
 	$debug = shift;
@@ -76,6 +84,10 @@ sub set_glob {
 sub skip {
 	$skip = shift;
 }
+sub set_accessories_dir {
+	$accessories_dir = shift;
+}
+
 sub command {
 	$command = shift;
 }
@@ -86,6 +98,7 @@ sub test_all_snapshots {
 	Carp::croak("Need to supply directory name") if not defined $dir;
 	
 	my @files = sort File::Find::Rule->file()->name($glob)->in($dir);
+	my $prefix_length = length $dir;
 
 	my $T = Test::Builder->new;
 	
@@ -98,7 +111,9 @@ sub test_all_snapshots {
 			$T->skip($skip->{$file}) for 1..$cnt;
 			next;
 		}
-		my $in_file = "$file.in";
+		my $accessories_path = $accessories_dir ? $accessories_dir . substr($file, $prefix_length) : $file;
+		#$T->diag($accessories_path);
+		my $in_file = "$accessories_path.in";
 
 		my %std;
 		$std{out} = "$tempdir/out";
@@ -121,7 +136,7 @@ sub test_all_snapshots {
 
 		my @stds = $combine ? qw(out) : qw(err out);
 		foreach my $ext (@stds) {
-			my $expected = "$file.$ext";
+			my $expected = "$accessories_path.$ext";
 			if (-e $expected) {
 				my $diff = diff($expected, "$std{$ext}");
 				$T->ok(!$diff, "$ext of $file") or $T->diag($diff);
@@ -144,7 +159,7 @@ sub slurp {
 
 =head1 COPYRIGHT
 
-Copyright 2009 Gabor Szabo gabor@szabgab.com
+Copyright 2009 Gabor Szabo gabor@szabgab.com http://szabgab.com/
 
 =head1 LICENSE
 
