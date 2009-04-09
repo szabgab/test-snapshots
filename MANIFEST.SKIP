@@ -38,4 +38,5 @@
 # Avoid archives of this distribution
 \bTest-Snapshots-[\d\.\_]+
 
+\.git
 
