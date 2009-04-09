@@ -10,7 +10,7 @@ our $VERSION = '0.01';
 
 Test::Snapshots - for testing stand alone scripts and executables
 
-=head1 SYNOPIS
+=head1 SYNOPSIS
 
  use Test::More;
  use Test::Snapshots;
@@ -117,6 +117,44 @@ Use L<Capture::Tiny> ?
 =back
 
 =head1 DESCRIPTION
+
+Test::Snapshots was created especially to be able to test a 
+large number of command line oriented executables. It does not
+matter if the executable is something compiled from C, a Perl, 
+Python or PHP script.
+
+Test::Snapshot can be seen as a very simple replacement of L<Expect>.
+It will go over the designated direcory and run every execute like this:
+
+  executable arguments < input_file > output_file 2> error_file
+  
+It will then check if the output_file is the same as the exepcted output file
+and if the error_file is the sameas the expected error file.
+
+If an input file is not supplied then the < input_file part will be
+omitted.
+
+The input file, the list of arguments and the expected output and 
+error files all have the same name as the executable. So if you have
+an executable called C<fabricate.exe> then you'd create the following
+files:
+
+  fabricate.exe.in
+  fabricate.exe.argv
+  
+  fabricate.exe.out
+  fabricate.exe.err
+  fabricate.exe.exit
+  
+If .in is omitted we assume there is no input
+
+If .argv is omitted then no arguments are provided
+
+If .err or .out is omitted then it is assumed to be empty.
+
+If .exit is omitted then it is expected that the exit code will be
+equal to the default exit code which is 0.
+
 
 =cut
 
