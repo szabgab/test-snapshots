@@ -32,4 +32,9 @@ requires       'Text::Diff'               => 0;
 test_requires  'Test::More'               => '0.47';
 
 
+#homepage       
+#bugtracker     
+repository     'http://github.com/szabgab/test-snapshots';
+#MailingList    
+
 WriteAll;
