@@ -6,9 +6,6 @@ use 5.008005;
 
 our $VERSION = '0.01';
 
-# TODO deal with arguments
-# TODO deal with multiple test cases
-
 =head1 NAME
 
 Test::Snapshots - for testing stand alone scripts and executables
@@ -43,14 +40,50 @@ Change the way we locate the scripts to be executed.
 
  Test::Snapshots::set_accessories_dir('path/to/dir');
 
-In some cases you don't want the .out, .err etc files to be next to
-the script that are being tested. In such cases you can use the 
-above function to tell Test::Snapshots where those files can be found.
+Change the place where TS looks for .out files.
 
 =head1 WARNING
 
 This is alpha software. The API will most certainly change as 
 the requiremens clarify.
+
+
+=head1 TODO
+
+Test this module.
+
+Change the API to look more OO. Probably sg. like:
+
+Test::Snapshots->set_glob()
+    ->combine()
+    ->set_accessories_dir()
+    ->set_directories('eg')
+    ->test_all_snapshots();
+
+
+Deal with command line arguments. (.argv ?)
+
+Deal with multiple test cases (multipled .out files for a single script)
+.01.out  .02.out .02.err ?
+
+
+Deal with single file asseccories: A file that holds the contents of the .in , .our, .err etc... 
+file in sections. 
+
+E.g. the PHP core testing has .phpt files with sections:
+
+ --TEST--
+ Name of the test
+ --FILE--
+ The code that needs to be saved in a file and executed
+ --EXPECT--
+ The expected output
+ 
+Allow to pass several directories to traverse
+
+Allow multiple runs in the same test script. (This will probably
+mean the test counting needs to be done separately or we will have 
+to use the new "add plan" feature of Test::More.
 
 =cut
 
@@ -75,22 +108,96 @@ sub debug {
 	$debug = shift;
 }
 
+=head2 combine
+
+Set to 1 if you'd like to combine the STDOUT and STDERR and compare the
+combined output to the .out file.
+
+Default is 0 meaning they will be captured separatelly and compared 
+separatelly to the .out and .err files.
+
+=cut
+
 sub combine {
 	$combine = shift;
 }
+
+=head2 set_glob
+
+Set what glob to use to fine the files to be executed. Currently it 
+defaults to '*.pl' but maybe it should have no default forcing the user
+to set one.
+
+=cut
+
 sub set_glob {
 	$glob = shift;
 }
+
+=head2 skip
+
+Pass to it a hash ref of     path => 'explanation' pairs
+for all the files that need to be skipped.
+
+  skip({
+    path => 'good reason',
+    path2 => 'some excuse',
+  });
+
+=cut
+
 sub skip {
 	$skip = shift;
 }
+
+=head2 set_accessories_dir
+	
+In some cases you don't want the .out, .err etc files to be next to
+the script that are being tested. In such cases you can use the 
+above function to tell Test::Snapshots where those files can be found.
+
+=cut
+
 sub set_accessories_dir {
 	$accessories_dir = shift;
 }
 
+=head2 command
+
+By default Test::Snapshots will assume the files to be tested 
+are stand alone executables or that at least they know where their
+interpreter is. So they will be executed directly.
+
+In most of the cases you will want to run them with some 
+specific command. e.g. You might want to make sure they run with the
+same perl interpreter as your test script runs. In that case call the following:
+
+ command($^X)
+
+In other cases the files need to be executed with some other tool, eg. 
+the perl 6 or python interpreter which is in the path:
+
+ command("perl6");
+
+or
+
+ command("python");
+
+=cut
+
 sub command {
 	$command = shift;
 }
+
+=head2 test_all_snapshots
+
+This is the call that actually goes out, locates all the
+files to be tested, sets the C<plan> and executes all the test.
+Currently one should give a directory as a paramter to it but 
+I plan to move that parameter to a separate method and to allow
+the setting of multiple directories.
+
+=cut
 
 sub test_all_snapshots {
 	my ($dir) = @_;
@@ -141,7 +248,7 @@ sub test_all_snapshots {
 				my $diff = diff($expected, "$std{$ext}");
 				$T->ok(!$diff, "$ext of $file") or $T->diag($diff);
 			} else {
-				my $data = slurp($std{$ext});
+				my $data = _slurp($std{$ext});
 				$T->ok($data eq '', "$ext of $file")
 					or $T->diag("Expected nothing.\nReceived\n\n$data");
 			}
@@ -149,7 +256,8 @@ sub test_all_snapshots {
 	}
 }
 
-sub slurp {
+# a private slurp method.
+sub _slurp {
 	my $file = shift;
 	open my $fh, '<', $file or die $!;
 	local $/ = undef;
