@@ -136,6 +136,7 @@ my $glob     = '*.pl';
 my $command  = $^X;
 my $skip     = {};
 my $accessories_dir;
+my $default_expected_exit = 0;
 
 sub debug {
 	$debug = shift;
@@ -245,6 +246,7 @@ sub test_all_snapshots {
 	my $T = Test::Builder->new;
 	
 	my $cnt = $combine ? 1 : 2;
+	$cnt++; # for exit codes
 	$T->plan(tests => @files * $cnt );
 
 	my $tempdir = tempdir( CLEANUP => 1 );
@@ -275,6 +277,8 @@ sub test_all_snapshots {
 		}
 		#$T->diag($file);
 		system $cmd;
+		my $exit = $?;
+		#$T->diag("Exit '$exit'");
 
 		my @stds = $combine ? qw(out) : qw(err out);
 		foreach my $ext (@stds) {
@@ -287,6 +291,16 @@ sub test_all_snapshots {
 				$T->ok($data eq '', "$ext of $file")
 					or $T->diag("Expected nothing.\nReceived\n\n$data");
 			}
+		}
+		# exit code
+		{
+			my $expected_exit = $default_expected_exit;
+			my $expected_file = "$accessories_path.exit";
+			if (-e $expected_file) {
+				$expected_exit = _slurp($expected_file);
+				chomp $expected_exit;
+			}
+			$T->is_eq($exit >> 8, $expected_exit, "Exit code of $file");
 		}
 	}
 }
