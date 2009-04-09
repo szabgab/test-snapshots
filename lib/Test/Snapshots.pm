@@ -18,7 +18,6 @@ Test::Snapshots - for testing stand alone scripts and executables
  test_all_snapshots('eg');
 
 Will go over all the .pl files in the eg/ directory, run them using
-perl and compare the standar output and standard error for each SCRIPT
 with the content of the SCRIPT.out and SCRIPT.err files
 
 
@@ -45,12 +44,17 @@ Change the place where TS looks for .out files.
 =head1 WARNING
 
 This is alpha software. The API will most certainly change as 
-the requiremens clarify.
-
+the requirements get clearer.
 
 =head1 TODO
 
+=over 4
+
+=item *
+
 Test this module.
+
+=item *
 
 Change the API to look more OO. Probably sg. like:
 
@@ -60,15 +64,19 @@ Test::Snapshots->set_glob()
     ->set_directories('eg')
     ->test_all_snapshots();
 
+=item *
 
 Deal with command line arguments. (.argv ?)
 
-Deal with multiple test cases (multipled .out files for a single script)
+=item *
+
+Deal with multiple test cases (multiple .out, .err, .in etc files for a single script)
 .01.out  .02.out .02.err ?
 
+=item *
 
-Deal with single file asseccories: A file that holds the contents of the .in , .our, .err etc... 
-file in sections. 
+Deal with single file asseccories: A single file that holds the contents of 
+the .in , .our, .err etc... file in sections. 
 
 E.g. the PHP core testing has .phpt files with sections:
 
@@ -78,12 +86,37 @@ E.g. the PHP core testing has .phpt files with sections:
  The code that needs to be saved in a file and executed
  --EXPECT--
  The expected output
- 
+
+Test::Snapshots should be able to support that with the code
+to be executed inside as in the case of php or being outside
+as when testing executables.
+
+=item *
+
 Allow to pass several directories to traverse
+
+=item *
 
 Allow multiple runs in the same test script. (This will probably
 mean the test counting needs to be done separately or we will have 
 to use the new "add plan" feature of Test::More.
+
+=item *
+
+Set timeout for the executions so if one of them gets stuck 
+(e.g. waiting on STDIN) the whole test suit won't suffer.
+
+=item *
+
+Allow definiton of expected exit code.
+
+=item *
+
+Use L<Capture::Tiny> ?
+
+=back
+
+=head1 DESCRIPTION
 
 =cut
 
@@ -151,10 +184,12 @@ sub skip {
 }
 
 =head2 set_accessories_dir
+
+We are calling the .out, .err etc files accessories.
 	
-In some cases you don't want the .out, .err etc files to be next to
-the script that are being tested. In such cases you can use the 
-above function to tell Test::Snapshots where those files can be found.
+In some cases you don't want them to be next to the script that 
+are being tested. In such cases you can use the above function 
+to tell Test::Snapshots where those files can be found.
 
 =cut
 
@@ -264,6 +299,11 @@ sub _slurp {
 	return <$fh>;
 }
 
+=head1 See Also
+
+L<Test::Simple>, L<Test::More> and L<Test::Most>.
+
+L<Test::Output>, L<Capture::Tiny>, L<Test::Cmd>,
 
 =head1 COPYRIGHT
 
