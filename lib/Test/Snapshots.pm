@@ -176,10 +176,6 @@ my $skip     = {};
 my $accessories_dir;
 my $default_expected_exit = 0;
 
-sub debug {
-	$debug = shift;
-}
-
 =head2 combine
 
 Set to 1 if you'd like to combine the STDOUT and STDERR and compare the
@@ -261,6 +257,18 @@ or
 
 sub command {
 	$command = shift;
+}
+
+=head2 debug
+
+You can turn on the debug flag by calling debug(1).
+If it is set Test::Snippets will call diag() with all kinds of 
+information during the test execution.
+
+=cut
+
+sub debug {
+	$debug = shift;
 }
 
 =head2 test_all_snapshots
