@@ -46,13 +46,19 @@ Change the place where TS looks for .out files.
 This is alpha software. The API will most certainly change as 
 the requirements get clearer.
 
+=head1 Examples
+
+Many of the unit test of this module are actually simple use cases
+with the files to be tested located in the eg/ subdirectory of the
+distribution. Check them out.
+
 =head1 TODO
 
 =over 4
 
 =item *
 
-Test this module.
+Add more test this module. Especially, we don't yet have failing tests.
 
 =item *
 
@@ -66,12 +72,11 @@ Test::Snapshots->set_glob()
 
 =item *
 
-Deal with command line arguments. (.argv ?)
+Allow subclassing or extending the module in some other way.
 
 =item *
 
-Deal with multiple test cases (multiple .out, .err, .in etc files for a single script)
-.01.out  .02.out .02.err ?
+Deal with command line arguments. (.argv ?)
 
 =item *
 
@@ -108,7 +113,12 @@ Set timeout for the executions so if one of them gets stuck
 
 =item *
 
-Allow definiton of expected exit code.
+Allow definiton of expected exit code for each file in some 
+centralized form maybe similar to the way skip is defined.
+
+=item *
+
+Do we need a TODO test capability here?
 
 =item *
 
@@ -155,7 +165,27 @@ If .err or .out is omitted then it is assumed to be empty.
 If .exit is omitted then it is expected that the exit code will be
 equal to the default exit code which is 0.
 
+=head2 Multiple test cases
 
+Sometime a single executable file should have multiple test cases. That is
+we might want to provide different .in and .argv files and expect different
+.out/.err/.exit values.
+
+In order to allow such mode the files need to have a number in their name.
+So if you are testing I<xyz> the files need to be
+
+ xyz.01.in
+ xyz.01.out
+ 
+ xyz.02.in
+ xyz.02.out
+ xyz.02.err
+
+The expected number of test is the number of different numbers so if you have
+two files xyz.01.in and xyz.27.err then Test::Snapshots will run two test. One
+of them has no input and some expected error while the other has only input 
+and not expected output or error.
+ 
 =cut
 
 use Carp             ();
@@ -266,6 +296,20 @@ sub command {
 	$command = shift;
 }
 
+=head2 default_expected_exit_code
+
+The exepceted exit code can be defined on a perl case basis
+in the .exit file. If the .exit file does not exist
+then there is a default expected exit code. Which is 0 by default.
+
+Use this method to chane the default.
+
+=cut
+
+sub default_expected_exit_code {
+	$default_expected_exit = shift;
+}
+
 =head2 debug
 
 You can turn on the debug flag by calling debug(1).
@@ -338,6 +382,17 @@ sub test_all_snapshots {
 		}
 	}
 }
+
+=head2 test_single_file
+
+Testing a single file. It gets the path to the file to be tested.
+The length of the prefix and optionally a case which is the 01, 02 etc.
+name of the test case for the multple-test-cases.
+
+Currently this is considered an internal method.
+
+=cut
+
 
 sub test_single_file {
 	my ($file, $prefix_length, $case) = @_;
