@@ -4,6 +4,7 @@ Changes of Test::Snapshots
     Add lots of test cases
     Add lots of documentation
     Multiple test cases
+    Limit test run time to a predefined timeout
     Check exit code as well
     Uploaded to Github
 

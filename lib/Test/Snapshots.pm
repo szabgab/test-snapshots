@@ -108,11 +108,6 @@ to use the new "add plan" feature of Test::More.
 
 =item *
 
-Set timeout for the executions so if one of them gets stuck 
-(e.g. waiting on STDIN) the whole test suit won't suffer.
-
-=item *
-
 Allow definiton of expected exit code for each file in some 
 centralized form maybe similar to the way skip is defined.
 
@@ -185,7 +180,12 @@ The expected number of test is the number of different numbers so if you have
 two files xyz.01.in and xyz.27.err then Test::Snapshots will run two test. One
 of them has no input and some expected error while the other has only input 
 and not expected output or error.
- 
+
+=head2 Timeout
+
+In order to avoid stuck test cases (e.g. waiting on STDIN)
+by default every test case can run up to 10 secs.
+
 =cut
 
 use Carp             ();
@@ -207,6 +207,14 @@ my $skip     = {};
 my $accessories_dir;
 my $default_expected_exit = 0;
 my $multiple;
+my $timeout = 10;
+
+=head2 timeout
+
+Set timeout for the executions so if one of them gets stuck 
+(e.g. waiting on STDIN) the whole test suit won't suffer.
+
+Default 10 secs.
 
 =head2 combine
 
@@ -421,12 +429,32 @@ sub test_single_file {
 	if ($debug) {
 		$T->diag($cmd);
 	}
-	#$T->diag($file);
-	system $cmd;
-	my $exit = $?;
-	#$T->diag("Exit '$exit'");
 
 	my @stds = $combine ? qw(out) : qw(err out);
+
+
+	my $exit;
+	#$T->diag($file);
+	$SIG{ALRM} = sub { die "TIMEOUT\n" };
+	alarm($timeout);
+	eval {
+		system $cmd;
+		$exit = $?;
+		1;
+
+	} or do {
+		alarm(0);
+		if ($@ eq "TIMEOUT\n") {
+			$T->ok(0, "Timeout. No result") for 1..@stds+1;
+			return;
+		} else {
+			die $@; # unknown exception
+		}
+	};
+	alarm(0);
+	#$T->diag("Exit '$exit'");
+
+
 	foreach my $ext (@stds) {
 		my $expected = "$accessories_path$case.$ext";
 		if (-e $expected) {
