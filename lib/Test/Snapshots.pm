@@ -330,22 +330,25 @@ sub test_all_snapshots {
 			next;
 		}
 		if ($multiple) {
-			$T->ok(1) for 1..$cnt * @{ $tests{$file} };
+			foreach my $case (@{ $tests{$file} }) {
+				test_single_file($file, $prefix_length, ".$case");
+			}
 		} else {
-			test_single_file($file, $prefix_length);
+			test_single_file($file, $prefix_length,);
 		}
 	}
 }
 
 sub test_single_file {
-	my ($file, $prefix_length) = @_;
+	my ($file, $prefix_length, $case) = @_;
+	$case ||= '';
 
 	my $tempdir = tempdir( CLEANUP => 1 );
 	my $T = Test::Builder->new;
 
 	my $accessories_path = $accessories_dir ? $accessories_dir . substr($file, $prefix_length) : $file;
 	#$T->diag($accessories_path);
-	my $in_file = "$accessories_path.in";
+	my $in_file = "$accessories_path$case.in";
 
 	my %std;
 	$std{out} = "$tempdir/out";
@@ -370,7 +373,7 @@ sub test_single_file {
 
 	my @stds = $combine ? qw(out) : qw(err out);
 	foreach my $ext (@stds) {
-		my $expected = "$accessories_path.$ext";
+		my $expected = "$accessories_path$case.$ext";
 		if (-e $expected) {
 			my $diff = diff($expected, "$std{$ext}");
 			$T->ok(!$diff, "$ext of $file") or $T->diag($diff);
@@ -383,13 +386,15 @@ sub test_single_file {
 	# exit code
 	{
 		my $expected_exit = $default_expected_exit;
-		my $expected_file = "$accessories_path.exit";
+		my $expected_file = "$accessories_path$case.exit";
 		if (-e $expected_file) {
 			$expected_exit = _slurp($expected_file);
 			chomp $expected_exit;
 		}
 		$T->is_eq($exit >> 8, $expected_exit, "Exit code of $file");
 	}
+
+	return;
 }
 
 
