@@ -162,6 +162,7 @@ use Carp             ();
 use File::Temp       qw(tempdir);
 use Text::Diff       qw(diff);
 use File::Find::Rule;
+use List::Util       qw(sum);
 
 use base 'Test::Builder::Module';
 use base 'Exporter';
@@ -175,6 +176,7 @@ my $command  = $^X;
 my $skip     = {};
 my $accessories_dir;
 my $default_expected_exit = 0;
+my $multiple;
 
 =head2 combine
 
@@ -230,6 +232,11 @@ to tell Test::Snapshots where those files can be found.
 
 sub set_accessories_dir {
 	$accessories_dir = shift;
+}
+
+
+sub multiple {
+	$multiple = shift;
 }
 
 =head2 command
@@ -288,68 +295,103 @@ sub test_all_snapshots {
 	
 	my @files = sort File::Find::Rule->file()->name($glob)->in($dir);
 	my $prefix_length = length $dir;
+	
+	# go over all the files and count the different .in, .out, .err, .exit files
+	my %tests;
+	if ($multiple) {
+		foreach my $file (@files) {
+			my %seen;
+			my @extras = grep { !$seen{$_}++ } 
+				map {$_ =~ /\.(\d+)\.(out|err|in|exit)$/; $1}  
+				glob "$file.*";
+			$tests{$file} = \@extras;
+		}
+	}
 
 	my $T = Test::Builder->new;
 	
 	my $cnt = $combine ? 1 : 2;
 	$cnt++; # for exit codes
-	$T->plan(tests => @files * $cnt );
+	my $test_count = @files * $cnt;
 
-	my $tempdir = tempdir( CLEANUP => 1 );
+	#use Data::Dumper;
+	#$T->diag(Dumper \@files);
+	#$T->diag(Dumper \%tests);
+	if ($multiple) {
+		#$T->diag(sum (map { scalar @{ $tests{$_} } } @files));
+		$test_count = $cnt * sum (map { scalar @{ $tests{$_} } } @files);
+	}
+	$T->plan(tests => $test_count );
+
 	foreach my $file (@files) {
 		if ($skip->{$file}) {
-			$T->skip($skip->{$file}) for 1..$cnt;
+			my $count = $cnt * ($multiple ? scalar(@{ $tests{$file} }) : 1);
+			$T->skip($skip->{$file}) for 1..$count;
 			next;
 		}
-		my $accessories_path = $accessories_dir ? $accessories_dir . substr($file, $prefix_length) : $file;
-		#$T->diag($accessories_path);
-		my $in_file = "$accessories_path.in";
-
-		my %std;
-		$std{out} = "$tempdir/out";
-		$std{err} = "$tempdir/err";
-
-		my $cmd = "$command $file";
-		if ($combine) {
-			$cmd .= " >$std{out} 2>&1";
+		if ($multiple) {
+			$T->ok(1) for 1..$cnt * @{ $tests{$file} };
 		} else {
-			$cmd .= " >$std{out} 2>$std{err}";
-		}
-		if (-e $in_file) {
-			$cmd .= " < $in_file";
-		}
-		if ($debug) {
-			$T->diag($cmd);
-		}
-		#$T->diag($file);
-		system $cmd;
-		my $exit = $?;
-		#$T->diag("Exit '$exit'");
-
-		my @stds = $combine ? qw(out) : qw(err out);
-		foreach my $ext (@stds) {
-			my $expected = "$accessories_path.$ext";
-			if (-e $expected) {
-				my $diff = diff($expected, "$std{$ext}");
-				$T->ok(!$diff, "$ext of $file") or $T->diag($diff);
-			} else {
-				my $data = _slurp($std{$ext});
-				$T->ok($data eq '', "$ext of $file")
-					or $T->diag("Expected nothing.\nReceived\n\n$data");
-			}
-		}
-		# exit code
-		{
-			my $expected_exit = $default_expected_exit;
-			my $expected_file = "$accessories_path.exit";
-			if (-e $expected_file) {
-				$expected_exit = _slurp($expected_file);
-				chomp $expected_exit;
-			}
-			$T->is_eq($exit >> 8, $expected_exit, "Exit code of $file");
+			test_single_file($file, $prefix_length);
 		}
 	}
 }
+
+sub test_single_file {
+	my ($file, $prefix_length) = @_;
+
+	my $tempdir = tempdir( CLEANUP => 1 );
+	my $T = Test::Builder->new;
+
+	my $accessories_path = $accessories_dir ? $accessories_dir . substr($file, $prefix_length) : $file;
+	#$T->diag($accessories_path);
+	my $in_file = "$accessories_path.in";
+
+	my %std;
+	$std{out} = "$tempdir/out";
+	$std{err} = "$tempdir/err";
+
+	my $cmd = "$command $file";
+	if ($combine) {
+		$cmd .= " >$std{out} 2>&1";
+	} else {
+		$cmd .= " >$std{out} 2>$std{err}";
+	}
+	if (-e $in_file) {
+		$cmd .= " < $in_file";
+	}
+	if ($debug) {
+		$T->diag($cmd);
+	}
+	#$T->diag($file);
+	system $cmd;
+	my $exit = $?;
+	#$T->diag("Exit '$exit'");
+
+	my @stds = $combine ? qw(out) : qw(err out);
+	foreach my $ext (@stds) {
+		my $expected = "$accessories_path.$ext";
+		if (-e $expected) {
+			my $diff = diff($expected, "$std{$ext}");
+			$T->ok(!$diff, "$ext of $file") or $T->diag($diff);
+		} else {
+			my $data = _slurp($std{$ext});
+			$T->ok($data eq '', "$ext of $file")
+				or $T->diag("Expected nothing.\nReceived\n\n$data");
+		}
+	}
+	# exit code
+	{
+		my $expected_exit = $default_expected_exit;
+		my $expected_file = "$accessories_path.exit";
+		if (-e $expected_file) {
+			$expected_exit = _slurp($expected_file);
+			chomp $expected_exit;
+		}
+		$T->is_eq($exit >> 8, $expected_exit, "Exit code of $file");
+	}
+}
+
 
 # a private slurp method.
 sub _slurp {
