@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008005;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -185,6 +185,8 @@ and not expected output or error.
 
 In order to avoid stuck test cases (e.g. waiting on STDIN)
 by default every test case can run up to 10 secs.
+
+=head1 METHODS
 
 =cut
 
