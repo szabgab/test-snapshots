@@ -1,5 +1,8 @@
 Changes of Test::Snapshots
 
+
+    Fix when multiple caseses are in a separate directory
+
 v0.02 2009.04.10
 
     Add lots of test cases

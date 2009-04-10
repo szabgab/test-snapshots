@@ -354,10 +354,12 @@ sub test_all_snapshots {
 	my %tests;
 	if ($multiple) {
 		foreach my $file (@files) {
+			my $accessories_path = $accessories_dir ? $accessories_dir . substr($file, $prefix_length) : $file;
+
 			my %seen;
 			my @extras = grep { !$seen{$_}++ } 
 				map {$_ =~ /\.(\d+)\.(out|err|in|exit)$/; $1}  
-				glob "$file.*";
+				glob "$accessories_path.*";
 			$tests{$file} = \@extras;
 		}
 	}
