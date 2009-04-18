@@ -2,7 +2,7 @@ package Test::Snapshots;
 use strict;
 use warnings;
 
-use 5.008005;
+use 5.006;
 
 our $VERSION = '0.02';
 

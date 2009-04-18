@@ -1,4 +1,4 @@
-use 5.008005;
+use 5.006;
 use strict;
 use inc::Module::Install 0.77;
 
@@ -16,7 +16,7 @@ license        'perl';
 author         'Gabor Szabo';
 all_from       'lib/Test/Snapshots.pm';
 
-requires       'perl'                     => '5.008005';
+requires       'perl'                     => '5.006';
 requires       'Exporter'                 => 0;
 requires       'Carp'                     => 0;
 requires       'File::Basename'           => 0;
