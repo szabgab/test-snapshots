@@ -32,7 +32,7 @@ Get some extra diag messages
 Combines the stdout and stderr and compares them to the SCRIPT.out file
 
 
- Test::Snapshots::set_glob('*.t');
+ Test::Snapshots::set_glob('*.pl');
 
 Change the way we locate the scripts to be executed.
 
