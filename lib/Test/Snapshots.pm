@@ -80,7 +80,7 @@ Deal with command line arguments. (.argv ?)
 
 =item *
 
-Deal with single file asseccories: A single file that holds the contents of 
+Deal with single file accessories: A single file that holds the contents of 
 the .in , .our, .err etc... file in sections. 
 
 E.g. the PHP core testing has .phpt files with sections:
@@ -133,7 +133,7 @@ It will go over the designated direcory and run every execute like this:
 
   executable arguments < input_file > output_file 2> error_file
   
-It will then check if the output_file is the same as the exepcted output file
+It will then check if the output_file is the same as the expected output file
 and if the error_file is the sameas the expected error file.
 
 If an input file is not supplied then the < input_file part will be
@@ -223,8 +223,8 @@ Default 10 secs.
 Set to 1 if you'd like to combine the STDOUT and STDERR and compare the
 combined output to the .out file.
 
-Default is 0 meaning they will be captured separatelly and compared 
-separatelly to the .out and .err files.
+Default is 0 meaning they will be captured separately and compared 
+separately to the .out and .err files.
 
 =cut
 
@@ -234,7 +234,7 @@ sub combine {
 
 =head2 set_glob
 
-Set what glob to use to fine the files to be executed. Currently it 
+Set what glob to use to find the files to be executed. Currently it 
 defaults to '*.pl' but maybe it should have no default forcing the user
 to set one.
 
@@ -308,7 +308,7 @@ sub command {
 
 =head2 default_expected_exit_code
 
-The exepceted exit code can be defined on a perl case basis
+The expected exit code can be defined on a per case basis
 in the .exit file. If the .exit file does not exist
 then there is a default expected exit code. Which is 0 by default.
 
